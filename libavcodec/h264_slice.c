@@ -1135,6 +1135,9 @@ static int h264_export_frame_props(H264Context *h)
 
     cur->f->interlaced_frame = 0;
     cur->f->repeat_pict      = 0;
+    cur->f->timecode.present = 0;
+
+    av_log(h->avctx, AV_LOG_DEBUG, "JOC h264_export_frame_props TC: 0\n");
 
     /* Signal interlacing information externally. */
     /* Prioritize picture timing SEI information over used
@@ -1142,6 +1145,32 @@ static int h264_export_frame_props(H264Context *h)
 
     if (sps->pic_struct_present_flag) {
         H264SEIPictureTiming *pt = &h->sei.picture_timing;
+
+        if (pt->timecode.present) {
+            cur->f->timecode.present = 1;
+            cur->f->timecode.frames = pt->timecode.frames;
+            if (pt->timecode.secs_present)
+                cur->f->timecode.secs = pt->timecode.secs;
+            else
+                cur->f->timecode.secs = h->prev_prev_timing_secs;
+
+            if (pt->timecode.mins_present)
+                cur->f->timecode.mins = pt->timecode.mins;
+            else
+                cur->f->timecode.mins = h->prev_prev_timing_mins;
+
+            if (pt->timecode.hours_present)
+                cur->f->timecode.hours = pt->timecode.hours;
+            else
+                cur->f->timecode.hours = h->prev_prev_timing_hours;
+
+            av_log(h->avctx, AV_LOG_DEBUG, "JOC h264_export_frame_props TC: p: %d val: %02d:%02d:%02d:%02d\n", cur->f->timecode.present, cur->f->timecode.hours, cur->f->timecode.mins, cur->f->timecode.secs, cur->f->timecode.frames);
+
+            h->prev_prev_timing_secs = cur->f->timecode.secs;
+            h->prev_prev_timing_mins = cur->f->timecode.mins;
+            h->prev_prev_timing_hours = cur->f->timecode.hours;
+        }
+
         switch (pt->pic_struct) {
         case SEI_PIC_STRUCT_FRAME:
             break;

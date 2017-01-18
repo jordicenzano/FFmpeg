@@ -75,10 +75,11 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
         h->dpb_output_delay  = get_bits_long(gb, sps->dpb_output_delay_length);
     }
     if (sps->pic_struct_present_flag) {
-        unsigned int i, num_clock_ts;
+        unsigned int i, num_clock_ts, nuit_field_based_flag, counting_type, discontinuity_flag, cnt_dropped_flag; //TODO: JOC First implementation just get full timestamp!!
 
         h->pic_struct = get_bits(gb, 4);
         h->ct_type    = 0;
+        h->timecode.present = h->timecode.secs_present = h->timecode.mins_present = h->timecode.hours_present = 0;
 
         if (h->pic_struct > SEI_PIC_STRUCT_FRAME_TRIPLING)
             return AVERROR_INVALIDDATA;
@@ -90,26 +91,36 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
                 unsigned int full_timestamp_flag;
 
                 h->ct_type |= 1 << get_bits(gb, 2);
-                skip_bits(gb, 1);                 /* nuit_field_based_flag */
-                skip_bits(gb, 5);                 /* counting_type */
+                nuit_field_based_flag = get_bits(gb, 1); /* nuit_field_based_flag */
+                counting_type = get_bits(gb, 5);  /* counting_type */
                 full_timestamp_flag = get_bits(gb, 1);
-                skip_bits(gb, 1);                 /* discontinuity_flag */
-                skip_bits(gb, 1);                 /* cnt_dropped_flag */
-                skip_bits(gb, 8);                 /* n_frames */
+                discontinuity_flag = get_bits(gb, 1); /* discontinuity_flag */
+                cnt_dropped_flag = get_bits(gb, 1);   /* cnt_dropped_flag */
+
+                h->timecode.frames = get_bits(gb, 8);                 /* n_frames */
+                h->timecode.present = 1;
                 if (full_timestamp_flag) {
-                    skip_bits(gb, 6);             /* seconds_value 0..59 */
-                    skip_bits(gb, 6);             /* minutes_value 0..59 */
-                    skip_bits(gb, 5);             /* hours_value 0..23 */
+                    h->timecode.secs = get_bits(gb, 6);             /* seconds_value 0..59 */
+                    h->timecode.secs_present = 1;
+                    h->timecode.mins = get_bits(gb, 6);             /* minutes_value 0..59 */
+                    h->timecode.mins_present = 1;
+                    h->timecode.hours = get_bits(gb, 5);             /* hours_value 0..23 */
+                    h->timecode.hours_present = 1;
                 } else {
                     if (get_bits(gb, 1)) {        /* seconds_flag */
-                        skip_bits(gb, 6);         /* seconds_value range 0..59 */
+                        h->timecode.secs = get_bits(gb, 6);             /* seconds_value 0..59 */
+                        h->timecode.secs_present = 1;
                         if (get_bits(gb, 1)) {    /* minutes_flag */
-                            skip_bits(gb, 6);     /* minutes_value 0..59 */
-                            if (get_bits(gb, 1))  /* hours_flag */
-                                skip_bits(gb, 5); /* hours_value 0..23 */
+                            h->timecode.mins = get_bits(gb, 6);             /* minutes_value 0..59 */
+                            h->timecode.mins_present = 1;
+                            if (get_bits(gb, 1)) {  /* hours_flag */
+                                h->timecode.hours = get_bits(gb, 5);             /* hours_value 0..23 */
+                                h->timecode.hours_present = 1;
+                            }
                         }
                     }
                 }
+
                 if (sps->time_offset_length > 0)
                     skip_bits(gb,
                               sps->time_offset_length); /* time_offset */
@@ -118,6 +129,9 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
 
         av_log(logctx, AV_LOG_DEBUG, "ct_type:%X pic_struct:%d\n",
                h->ct_type, h->pic_struct);
+
+        av_log(logctx, AV_LOG_DEBUG, "JOC TEST TC: %02d:%02d:%02d:%02d\n", h->timecode.hours, h->timecode.mins, h->timecode.secs, h->timecode.frames);
+
     }
     return 0;
 }

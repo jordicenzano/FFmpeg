@@ -155,6 +155,17 @@ typedef struct AVFrameSideData {
 } AVFrameSideData;
 
 /**
+ * Structure to hold timecode information AVFrame.
+ */
+typedef struct AVFrameTimingInfo {
+    int present;
+    int frames;
+    int secs;
+    int mins;
+    int hours;
+} AVFrameTimingInfo;
+
+/**
  * This structure describes decoded (raw) audio or video data.
  *
  * AVFrame must be allocated using av_frame_alloc(). Note that this only
@@ -326,6 +337,11 @@ typedef struct AVFrame {
      * The content of the picture is interlaced.
      */
     int interlaced_frame;
+
+    /**
+     * Timecode information.
+     */
+    AVFrameTimingInfo timecode;
 
     /**
      * If the content is interlaced, is top field displayed first.

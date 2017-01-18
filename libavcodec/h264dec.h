@@ -514,6 +514,14 @@ typedef struct H264Context {
     int prev_interlaced_frame;
 
     /**
+     * Complement clock_timestamp
+     * Keep prev values for timming info
+     */
+    int prev_prev_timing_secs;
+    int prev_prev_timing_mins;
+    int prev_prev_timing_hours;
+
+    /**
      * Are the SEI recovery points looking valid.
      */
     int valid_recovery_point;

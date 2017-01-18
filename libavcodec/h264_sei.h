@@ -63,6 +63,17 @@ typedef enum {
     SEI_FPA_TYPE_2D                  = 6,
 } SEI_FpaType;
 
+typedef struct H264ClockTimeStamp {
+    int hours_present;
+    int hours;
+    int mins_present;
+    int mins;
+    int secs_present;
+    int secs;
+    int present;
+    int frames;
+} H264ClockTimeStamp;
+
 typedef struct H264SEIPictureTiming {
     SEI_PicStructType pic_struct;
 
@@ -82,6 +93,12 @@ typedef struct H264SEIPictureTiming {
      * cpb_removal_delay in picture timing SEI message, see H.264 C.1.2
      */
     int cpb_removal_delay;
+
+    /**
+     * clock_timestamp in picture timing SEI message, see H.264 D.1.2
+     * SMPTE timecode use to be embedded in here
+     */
+    H264ClockTimeStamp timecode;
 } H264SEIPictureTiming;
 
 typedef struct H264SEIAFD {

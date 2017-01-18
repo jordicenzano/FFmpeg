@@ -296,6 +296,7 @@ static int frame_copy_props(AVFrame *dst, const AVFrame *src, int force_copy)
     dst->repeat_pict            = src->repeat_pict;
     dst->interlaced_frame       = src->interlaced_frame;
     dst->top_field_first        = src->top_field_first;
+    dst->timecode               = src->timecode;
     dst->palette_has_changed    = src->palette_has_changed;
     dst->sample_rate            = src->sample_rate;
     dst->opaque                 = src->opaque;
