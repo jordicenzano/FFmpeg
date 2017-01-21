@@ -1137,8 +1137,6 @@ static int h264_export_frame_props(H264Context *h)
     cur->f->repeat_pict      = 0;
     cur->f->timecode.present = 0;
 
-    av_log(h->avctx, AV_LOG_DEBUG, "JOC h264_export_frame_props TC: 0\n");
-
     /* Signal interlacing information externally. */
     /* Prioritize picture timing SEI information over used
      * decoding process if it exists. */
@@ -1148,6 +1146,11 @@ static int h264_export_frame_props(H264Context *h)
 
         if (pt->timecode.present) {
             cur->f->timecode.present = 1;
+
+            cur->f->timecode.counting_type = pt->timecode.counting_type;
+            cur->f->timecode.discontinuity_flag = pt->timecode.discontinuity_flag;
+            cur->f->timecode.cnt_dropped_flag = pt->timecode.cnt_dropped_flag;
+
             cur->f->timecode.frames = pt->timecode.frames;
             if (pt->timecode.secs_present)
                 cur->f->timecode.secs = pt->timecode.secs;
@@ -1163,8 +1166,6 @@ static int h264_export_frame_props(H264Context *h)
                 cur->f->timecode.hours = pt->timecode.hours;
             else
                 cur->f->timecode.hours = h->prev_prev_timing_hours;
-
-            av_log(h->avctx, AV_LOG_DEBUG, "JOC h264_export_frame_props TC: p: %d val: %02d:%02d:%02d:%02d\n", cur->f->timecode.present, cur->f->timecode.hours, cur->f->timecode.mins, cur->f->timecode.secs, cur->f->timecode.frames);
 
             h->prev_prev_timing_secs = cur->f->timecode.secs;
             h->prev_prev_timing_mins = cur->f->timecode.mins;

@@ -72,6 +72,11 @@ typedef struct H264ClockTimeStamp {
     int secs;
     int present;
     int frames;
+    int nuit_field_based_flag;
+    int counting_type;
+    int discontinuity_flag;
+    int cnt_dropped_flag;
+    int time_offset;
 } H264ClockTimeStamp;
 
 typedef struct H264SEIPictureTiming {

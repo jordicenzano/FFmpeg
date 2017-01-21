@@ -163,6 +163,9 @@ typedef struct AVFrameTimingInfo {
     int secs;
     int mins;
     int hours;
+    int counting_type;
+    int discontinuity_flag;
+    int cnt_dropped_flag;
 } AVFrameTimingInfo;
 
 /**

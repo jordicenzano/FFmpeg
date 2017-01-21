@@ -1910,7 +1910,7 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream,
     if (av_frame_get_pkt_size(frame) != -1) print_val    ("pkt_size", av_frame_get_pkt_size(frame), unit_byte_str);
     else                       print_str_opt("pkt_size", "N/A");
 
-    if (frame->timecode.present > 0)  print_fmt("pkt_tc", "%02d:%02d:%02d:%02d",frame->timecode.hours, frame->timecode.mins, frame->timecode.secs, frame->timecode.frames);
+    if (frame->timecode.present > 0)  print_fmt("pkt_tc", "%02d:%02d:%02d:%02d disco %d dropped %d counter_type %d",frame->timecode.hours, frame->timecode.mins, frame->timecode.secs, frame->timecode.frames, frame->timecode.discontinuity_flag, frame->timecode.cnt_dropped_flag, frame->timecode.counting_type);
 
     switch (stream->codecpar->codec_type) {
         AVRational sar;

@@ -75,11 +75,16 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
         h->dpb_output_delay  = get_bits_long(gb, sps->dpb_output_delay_length);
     }
     if (sps->pic_struct_present_flag) {
-        unsigned int i, num_clock_ts, nuit_field_based_flag, counting_type, discontinuity_flag, cnt_dropped_flag; //TODO: JOC First implementation just get full timestamp!!
+        unsigned int i, num_clock_ts;
 
         h->pic_struct = get_bits(gb, 4);
         h->ct_type    = 0;
+        h->timecode.nuit_field_based_flag = 0;
+        h->timecode.counting_type = 0;
+        h->timecode.discontinuity_flag = 0;
         h->timecode.present = h->timecode.secs_present = h->timecode.mins_present = h->timecode.hours_present = 0;
+        h->timecode.cnt_dropped_flag = 0;
+        h->timecode.time_offset = 0;
 
         if (h->pic_struct > SEI_PIC_STRUCT_FRAME_TRIPLING)
             return AVERROR_INVALIDDATA;
@@ -91,30 +96,30 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
                 unsigned int full_timestamp_flag;
 
                 h->ct_type |= 1 << get_bits(gb, 2);
-                nuit_field_based_flag = get_bits(gb, 1); /* nuit_field_based_flag */
-                counting_type = get_bits(gb, 5);  /* counting_type */
+                h->timecode.nuit_field_based_flag = get_bits(gb, 1);
+                h->timecode.counting_type = get_bits(gb, 5);
                 full_timestamp_flag = get_bits(gb, 1);
-                discontinuity_flag = get_bits(gb, 1); /* discontinuity_flag */
-                cnt_dropped_flag = get_bits(gb, 1);   /* cnt_dropped_flag */
+                h->timecode.discontinuity_flag = get_bits(gb, 1);
+                h->timecode.cnt_dropped_flag = get_bits(gb, 1);
 
-                h->timecode.frames = get_bits(gb, 8);                 /* n_frames */
+                h->timecode.frames = get_bits(gb, 8);
                 h->timecode.present = 1;
                 if (full_timestamp_flag) {
-                    h->timecode.secs = get_bits(gb, 6);             /* seconds_value 0..59 */
+                    h->timecode.secs = get_bits(gb, 6);
                     h->timecode.secs_present = 1;
-                    h->timecode.mins = get_bits(gb, 6);             /* minutes_value 0..59 */
+                    h->timecode.mins = get_bits(gb, 6);
                     h->timecode.mins_present = 1;
-                    h->timecode.hours = get_bits(gb, 5);             /* hours_value 0..23 */
+                    h->timecode.hours = get_bits(gb, 5);
                     h->timecode.hours_present = 1;
                 } else {
-                    if (get_bits(gb, 1)) {        /* seconds_flag */
-                        h->timecode.secs = get_bits(gb, 6);             /* seconds_value 0..59 */
+                    if (get_bits(gb, 1)) {      /* seconds_flag */
+                        h->timecode.secs = get_bits(gb, 6);
                         h->timecode.secs_present = 1;
-                        if (get_bits(gb, 1)) {    /* minutes_flag */
-                            h->timecode.mins = get_bits(gb, 6);             /* minutes_value 0..59 */
+                        if (get_bits(gb, 1)) {  /* minutes_flag */
+                            h->timecode.mins = get_bits(gb, 6);
                             h->timecode.mins_present = 1;
-                            if (get_bits(gb, 1)) {  /* hours_flag */
-                                h->timecode.hours = get_bits(gb, 5);             /* hours_value 0..23 */
+                            if (get_bits(gb, 1)) {/* hours_flag */
+                                h->timecode.hours = get_bits(gb, 5);
                                 h->timecode.hours_present = 1;
                             }
                         }
@@ -122,16 +127,14 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
                 }
 
                 if (sps->time_offset_length > 0)
-                    skip_bits(gb,
-                              sps->time_offset_length); /* time_offset */
+                    h->timecode.time_offset = get_bits(gb, sps->time_offset_length);
             }
         }
 
-        av_log(logctx, AV_LOG_DEBUG, "ct_type:%X pic_struct:%d\n",
-               h->ct_type, h->pic_struct);
-
-        av_log(logctx, AV_LOG_DEBUG, "JOC TEST TC: %02d:%02d:%02d:%02d\n", h->timecode.hours, h->timecode.mins, h->timecode.secs, h->timecode.frames);
-
+        av_log(logctx, AV_LOG_DEBUG, "ct_type:%X pic_struct:%d tc:(%d)%02dh:(%d)%02dm:(%d)%02ds:(%d)%02df nuit_field_based_flag:%d counting_type: %d discontinuity_flag: %d cnt_dropped_flag: %d time_offset:%d\n",
+               h->ct_type, h->pic_struct, h->timecode.hours_present, h->timecode.hours, h->timecode.mins_present,
+               h->timecode.mins, h->timecode.mins_present, h->timecode.secs, h->timecode.present, h->timecode.frames,
+               h->timecode.nuit_field_based_flag, h->timecode.counting_type, h->timecode.discontinuity_flag, h->timecode.cnt_dropped_flag, h->timecode.time_offset);
     }
     return 0;
 }
