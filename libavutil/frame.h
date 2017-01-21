@@ -155,7 +155,7 @@ typedef struct AVFrameSideData {
 } AVFrameSideData;
 
 /**
- * Structure to hold timecode information AVFrame.
+ * Structure to hold timming/timecode information AVFrame.
  */
 typedef struct AVFrameTimingInfo {
     int present;
